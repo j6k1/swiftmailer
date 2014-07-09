@@ -22,6 +22,13 @@ class Swift_Signers_DKIMSigner implements Swift_Signers_HeaderSigner
      */
     protected $_privateKey;
 
+	/**
+	 * Passphrase
+	 *
+	 * @var string
+	 */
+	protected $_passphrase;
+	
     /**
      * DomainName
      *
@@ -175,9 +182,10 @@ class Swift_Signers_DKIMSigner implements Swift_Signers_HeaderSigner
      * @param string $domainName
      * @param string $selector
      */
-    public function __construct($privateKey, $domainName, $selector)
+    public function __construct($privateKey, $domainName, $selector, $passphrase = null)
     {
         $this->_privateKey = $privateKey;
+        $this->_passphrase = $passphrase;
         $this->_domainName = $domainName;
         $this->_signerIdentity = '@' . $domainName;
         $this->_selector = $selector;
@@ -191,9 +199,9 @@ class Swift_Signers_DKIMSigner implements Swift_Signers_HeaderSigner
      * @param string $selector
      * @return Swift_Signers_DKIMSigner
      */
-    public static function newInstance($privateKey, $domainName, $selector)
+    public static function newInstance($privateKey, $domainName, $selector, $passphrase = null)
     {
-        return new static($privateKey, $domainName, $selector);
+        return new static($privateKey, $domainName, $selector, $passphrase);
     }
 
 
@@ -677,7 +685,9 @@ class Swift_Signers_DKIMSigner implements Swift_Signers_HeaderSigner
                 $algorithm = OPENSSL_ALGO_SHA256;
                 break;
         }
-        $pkeyId=openssl_get_privatekey($this->_privateKey);
+        if(is_null($this->_passphrase)) $pkeyId=openssl_get_privatekey($this->_privateKey);
+        else $pkeyId=openssl_get_privatekey($this->_privateKey,$this->_passphrase);
+        
         if (!$pkeyId) {
             throw new Swift_SwiftException('Unable to load DKIM Private Key ['.openssl_error_string().']');
         }
